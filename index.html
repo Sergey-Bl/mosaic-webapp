@@ -13,24 +13,30 @@
     #loading { position: absolute; inset: 0; display: flex; flex-direction: column;
                justify-content: center; align-items: center; background: #EEF4F1; z-index: 10; }
     #loading h1 { color: #3FB76B; font-size: 48px; letter-spacing: 8px; font-family: -apple-system, sans-serif; }
-    #loading p { color: #6B7872; margin-top: 12px; font-size: 16px; font-family: -apple-system, sans-serif; }
-    .spinner { margin-top: 30px; width: 40px; height: 40px; border: 3px solid #D3DAD6;
-               border-top: 3px solid #3FB76B; border-radius: 50%; animation: spin 0.8s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    #loading p { color: #6B7872; margin-top: 16px; font-size: 18px; font-family: -apple-system, sans-serif; }
+    .bar-bg { margin-top: 32px; width: 240px; height: 8px; background: #D3DAD6; border-radius: 4px; overflow: hidden; }
+    .bar-fill { width: 0%; height: 100%; background: #3FB76B; border-radius: 4px; transition: width 0.3s ease; }
+    #pct { color: #3FB76B; font-size: 22px; font-weight: bold; margin-top: 14px; font-family: -apple-system, sans-serif; }
+    #size-info { color: #9CA8A0; font-size: 13px; margin-top: 6px; font-family: -apple-system, sans-serif; }
   </style>
 </head>
 <body>
   <div id="loading">
     <h1>MOSAIC</h1>
     <p>Loading puzzles...</p>
-    <div class="spinner"></div>
+    <div class="bar-bg"><div class="bar-fill" id="bar"></div></div>
+    <div id="pct">0%</div>
+    <div id="size-info">~37 MB</div>
   </div>
   <canvas id="unity-canvas" tabindex="-1"></canvas>
   <script>
-    // Get canvas FIRST before anything else
     var canvas = document.getElementById("unity-canvas");
+    var bar = document.getElementById("bar");
+    var pctEl = document.getElementById("pct");
+    var sizeEl = document.getElementById("size-info");
+    var loadingP = document.querySelector("#loading p");
 
-    // Telegram Mini App
+    // Telegram
     var tg = window.Telegram?.WebApp;
     if (tg) {
       tg.expand();
@@ -38,7 +44,7 @@
       try { tg.disableVerticalSwipes(); } catch(e) {}
     }
 
-    // Load Unity
+    // Load Unity with progress
     var script = document.createElement("script");
     script.src = "Build/WebGLBuild.loader.js";
     script.onload = function() {
@@ -51,11 +57,23 @@
         productName: "Mosaic",
         matchWebGLToCanvasSize: true,
         devicePixelRatio: window.devicePixelRatio || 1,
+        onProgress: function(progress) {
+          var p = Math.round(progress * 100);
+          bar.style.width = p + "%";
+          pctEl.textContent = p + "%";
+          if (p < 30) loadingP.textContent = "Downloading engine...";
+          else if (p < 70) loadingP.textContent = "Loading assets...";
+          else if (p < 100) loadingP.textContent = "Almost ready...";
+          else loadingP.textContent = "Starting game!";
+          var loaded = Math.round(progress * 37);
+          sizeEl.textContent = loaded + " / 37 MB";
+        },
       }).then(function(instance) {
         document.getElementById("loading").style.display = "none";
       }).catch(function(err) {
-        document.querySelector("#loading p").textContent = err.message || "Error";
-        document.querySelector(".spinner").style.display = "none";
+        loadingP.textContent = err.message || "Error loading game";
+        bar.style.background = "#E15452";
+        pctEl.textContent = "";
       });
     };
     document.body.appendChild(script);
