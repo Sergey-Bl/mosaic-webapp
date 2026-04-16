@@ -11,6 +11,10 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 100%; height: 100%; overflow: hidden; background: #1a1a2e; }
     #unity-canvas { width: 100% !important; height: 100% !important; display: block; }
+    /* Account for Telegram header/footer bars */
+    @supports (padding: env(safe-area-inset-top)) {
+      #unity-canvas { padding-bottom: env(safe-area-inset-bottom); }
+    }
     #loading { position: absolute; inset: 0; display: flex; flex-direction: column;
                justify-content: center; align-items: center; background: #EEF4F1; z-index: 10; }
     #loading h1 { color: #3FB76B; font-size: 48px; letter-spacing: 8px; font-family: -apple-system, sans-serif; }
@@ -28,9 +32,18 @@
   </div>
   <canvas id="unity-canvas" tabindex="-1"></canvas>
   <script>
-    if (window.Telegram?.WebApp) {
-      Telegram.WebApp.expand();
-      Telegram.WebApp.ready();
+    var tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.expand();
+      tg.ready();
+      tg.disableVerticalSwipes();
+      // Resize canvas to Telegram's actual viewport
+      function resizeCanvas() {
+        var h = tg.viewportStableHeight || window.innerHeight;
+        canvas.style.height = h + "px";
+      }
+      tg.onEvent("viewportChanged", resizeCanvas);
+      resizeCanvas();
     }
 
     var canvas = document.getElementById("unity-canvas");
