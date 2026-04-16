@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Mosaic — Jigsaw Puzzles</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+* { margin: 0; padding: 0; }
+body { background: #1a1a2e; display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column; font-family: -apple-system, sans-serif; }
+h1 { color: #3FB76B; font-size: 48px; letter-spacing: 8px; }
+p { color: rgba(255,255,255,0.6); margin-top: 16px; font-size: 18px; }
+.loader { margin-top: 40px; width: 60px; height: 60px; border: 4px solid rgba(63,183,107,0.2); border-top: 4px solid #3FB76B; border-radius: 50%; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+#unity-container { width: 100%; height: 100%; display: none; }
+#unity-canvas { width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<div id="loading">
+  <h1>MOSAIC</h1>
+  <p>Loading jigsaw puzzles...</p>
+  <div class="loader"></div>
+</div>
+<div id="unity-container">
+  <canvas id="unity-canvas" tabindex="-1"></canvas>
+</div>
+<script>
+// Telegram WebApp integration
+const tg = window.Telegram?.WebApp;
+if (tg) {
+  tg.expand();
+  tg.ready();
+}
+
+// Unity WebGL loader (will work once build is uploaded)
+var buildUrl = "Build";
+var loaderUrl = buildUrl + "/WebGL.loader.js";
+
+var script = document.createElement("script");
+script.src = loaderUrl;
+script.onload = () => {
+  createUnityInstance(document.querySelector("#unity-canvas"), {
+    dataUrl: buildUrl + "/WebGL.data",
+    frameworkUrl: buildUrl + "/WebGL.framework.js",
+    codeUrl: buildUrl + "/WebGL.wasm",
+    streamingAssetsUrl: "StreamingAssets",
+    companyName: "Sergey Blotskiy",
+    productName: "Mosaic",
+  }).then((instance) => {
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("unity-container").style.display = "block";
+  }).catch((err) => {
+    console.error(err);
+    document.querySelector("p").textContent = "Tap to play in your browser";
+  });
+};
+script.onerror = () => {
+  document.querySelector("p").textContent = "WebGL build coming soon!";
+  document.querySelector(".loader").style.display = "none";
+};
+document.body.appendChild(script);
+</script>
+</body>
+</html>
